@@ -17,7 +17,7 @@ const Navbar = () => {
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-blue-resort">شاليهات الباعيش</h1>
+          <h1 className="text-2xl font-bold text-blue-resort">فيلات روزماري - RoseMary villa's</h1>
         </Link>
         
         {/* Mobile Menu Button */}

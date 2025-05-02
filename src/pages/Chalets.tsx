@@ -12,7 +12,7 @@ const Chalets = () => {
       
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">الشاليهات المتاحة</h1>
+          <h1 className="text-3xl font-bold mb-8">الفيلات المتاحة</h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {chalets.map((chalet) => (
@@ -21,7 +21,7 @@ const Chalets = () => {
                 id={chalet.id}
                 name={chalet.name}
                 description={chalet.description}
-                price={chalet.price}
+                price={chalet.price.weekday}
                 rating={chalet.rating}
                 image={chalet.images[0]}
               />

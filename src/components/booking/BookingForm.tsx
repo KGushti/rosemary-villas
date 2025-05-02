@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -54,10 +54,20 @@ const formSchema = z.object({
 interface BookingFormProps {
   chaletId?: string;
   chaletName?: string;
-  price?: number;
+  price?: {
+    weekday: number;
+    weekend: number;
+  };
 }
 
-const BookingForm = ({ chaletId = "", chaletName = "شاليه", price = 0 }: BookingFormProps) => {
+const BookingForm = ({ 
+  chaletId = "", 
+  chaletName = "فيلا", 
+  price = {
+    weekday: 950,
+    weekend: 1000
+  } 
+}: BookingFormProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [totalPrice, setTotalPrice] = useState(0);
@@ -77,15 +87,43 @@ const BookingForm = ({ chaletId = "", chaletName = "شاليه", price = 0 }: Bo
     },
   });
   
+  // Function to check if a date is a weekend (Thursday or Friday)
+  const isWeekend = (date: Date): boolean => {
+    const day = date.getDay();
+    // In Arabic calendar, Thursday is 4 and Friday is 5
+    return day === 4 || day === 5;
+  };
+  
+  // Calculate price based on weekday/weekend
+  const calculateTotalPrice = (start: Date | undefined, end: Date | undefined) => {
+    if (!start || !end) return 0;
+    
+    let total = 0;
+    const currentDate = new Date(start);
+    
+    // Loop through each day and add appropriate price
+    while (currentDate <= end) {
+      if (isWeekend(currentDate)) {
+        total += price.weekend;
+      } else {
+        total += price.weekday;
+      }
+      
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return total;
+  };
+  
   // Handle date selection
   const handleDateSelection = (start: Date | undefined, end: Date | undefined) => {
     setStartDate(start);
     setEndDate(end);
     
     if (start && end) {
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      setTotalPrice(price * diffDays);
+      const total = calculateTotalPrice(start, end);
+      setTotalPrice(total);
     } else {
       setTotalPrice(0);
     }
@@ -115,6 +153,12 @@ const BookingForm = ({ chaletId = "", chaletName = "شاليه", price = 0 }: Bo
       description: "سيتم مراجعة طلبك والرد عليك في أقرب وقت.",
     });
   };
+
+  // Calculate nights between two dates
+  const calculateNights = (start: Date, end: Date): number => {
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  };
   
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -136,15 +180,17 @@ const BookingForm = ({ chaletId = "", chaletName = "شاليه", price = 0 }: Bo
       <div className="mb-6 p-4 bg-blue-50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2">تفاصيل الحجز</h3>
         <div className="flex justify-between mb-2">
-          <span>سعر الليلة:</span>
-          <span>{price} د.ل</span>
+          <span>سعر الليلة العادية:</span>
+          <span>{price.weekday} د.ل</span>
+        </div>
+        <div className="flex justify-between mb-2">
+          <span>سعر ليلة الخميس والجمعة:</span>
+          <span>{price.weekend} د.ل</span>
         </div>
         {startDate && endDate && (
           <div className="flex justify-between mb-2">
             <span>عدد الليالي:</span>
-            <span>
-              {Math.ceil(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}
-            </span>
+            <span>{calculateNights(startDate, endDate)}</span>
           </div>
         )}
         <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
@@ -224,7 +270,7 @@ const BookingForm = ({ chaletId = "", chaletName = "شاليه", price = 0 }: Bo
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                       <SelectItem key={num} value={num.toString()}>
                         {num}
                       </SelectItem>

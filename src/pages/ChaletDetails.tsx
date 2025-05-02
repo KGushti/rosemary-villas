@@ -22,9 +22,9 @@ const ChaletDetails = () => {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">الشاليه غير موجود</h1>
+            <h1 className="text-2xl font-bold mb-4">الفيلا غير موجودة</h1>
             <p className="text-gray-600">
-              عذراً، الشاليه الذي تبحث عنه غير موجود.
+              عذراً، الفيلا التي تبحث عنها غير موجودة.
             </p>
           </div>
         </div>
@@ -58,8 +58,13 @@ const ChaletDetails = () => {
               </div>
               <p className="text-gray-600">{chalet.location}</p>
             </div>
-            <div className="mt-4 md:mt-0 bg-orange-accent/90 text-white py-2 px-4 rounded-lg text-lg font-bold">
-              {chalet.price} د.ل / الليلة
+            <div className="mt-4 md:mt-0 p-3 bg-blue-50 rounded-lg text-center">
+              <div className="bg-orange-accent/90 text-white py-2 px-4 rounded-lg text-lg font-bold mb-2">
+                {chalet.price.weekday} د.ل / الليلة العادية
+              </div>
+              <div className="bg-orange-accent/90 text-white py-2 px-4 rounded-lg text-lg font-bold">
+                {chalet.price.weekend} د.ل / ليالي الخميس والجمعة
+              </div>
             </div>
           </div>
           
@@ -74,7 +79,7 @@ const ChaletDetails = () => {
             <div className="lg:col-span-2">
               <Card className="mb-8">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-4">وصف الشاليه</h2>
+                  <h2 className="text-2xl font-bold mb-4">وصف الفيلا</h2>
                   <p className="text-gray-700 mb-6">{chalet.longDescription}</p>
                   
                   <h3 className="text-xl font-bold mb-4">المميزات</h3>
@@ -106,7 +111,7 @@ const ChaletDetails = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-600">لا توجد تقييمات لهذا الشاليه بعد.</p>
+                  <p className="text-gray-600">لا توجد تقييمات لهذه الفيلا بعد.</p>
                 )}
               </div>
             </div>

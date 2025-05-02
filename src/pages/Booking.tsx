@@ -11,7 +11,7 @@ const Booking = () => {
       
       <main className="flex-1 py-8 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8 text-center">احجز شاليه الأحلام</h1>
+          <h1 className="text-3xl font-bold mb-8 text-center">احجز فيلا روزماري</h1>
           
           <div className="max-w-3xl mx-auto">
             <BookingForm />
