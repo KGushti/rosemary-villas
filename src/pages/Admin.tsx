@@ -8,9 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { chalets, reviews } from "@/data/chalets";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 // Mock data for bookings
-const bookings = [
+const initialBookings = [
   { 
     id: "1", 
     chaletId: "chalet-11", 
@@ -20,7 +24,7 @@ const bookings = [
     email: "mohamed@example.com", 
     startDate: "2023-08-20", 
     endDate: "2023-08-22", 
-    status: "confirmed",
+    status: "pending",
     guestsCount: 4,
     totalPrice: 2000,
     paymentMethod: "cash" 
@@ -99,6 +103,11 @@ const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [customerRatingFilter, setCustomerRatingFilter] = useState("all");
+  const [bookings, setBookings] = useState(initialBookings);
+  const [editingChalet, setEditingChalet] = useState(null);
+  const [chaletsList, setChaletsList] = useState(chalets);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
   
   // Filter bookings based on status
   const filteredBookings = bookings.filter(booking => {
@@ -113,7 +122,7 @@ const Admin = () => {
     return customer.rating < 50;
   });
   
-  const getStatusBadgeColor = (status: string) => {
+  const getStatusBadgeColor = (status) => {
     switch (status) {
       case "confirmed": return "bg-green-500";
       case "pending": return "bg-yellow-500";
@@ -122,6 +131,56 @@ const Admin = () => {
     }
   };
   
+  // Handle booking confirmation
+  const handleConfirmBooking = (bookingId) => {
+    setBookings(bookings.map(booking => 
+      booking.id === bookingId ? {...booking, status: "confirmed"} : booking
+    ));
+    
+    toast({
+      title: "تم تأكيد الحجز",
+      description: `تم تأكيد الحجز رقم ${bookingId} بنجاح`,
+    });
+  };
+  
+  // Handle booking rejection/cancellation
+  const handleRejectBooking = (bookingId) => {
+    setBookings(bookings.map(booking => 
+      booking.id === bookingId ? {...booking, status: "cancelled"} : booking
+    ));
+    
+    toast({
+      title: "تم إلغاء الحجز",
+      description: `تم إلغاء الحجز رقم ${bookingId}`,
+      variant: "destructive",
+    });
+  };
+  
+  // Handle viewing booking details
+  const handleViewBooking = (booking) => {
+    setSelectedBooking(booking);
+    setShowBookingDetails(true);
+  };
+  
+  // Handle editing chalet
+  const handleEditChalet = (chalet) => {
+    setEditingChalet({...chalet});
+  };
+  
+  // Handle saving chalet
+  const handleSaveChalet = () => {
+    setChaletsList(chaletsList.map(chalet => 
+      chalet.id === editingChalet.id ? editingChalet : chalet
+    ));
+    
+    toast({
+      title: "تم تحديث بيانات الفيلا",
+      description: `تم تحديث بيانات ${editingChalet.name} بنجاح`,
+    });
+    
+    setEditingChalet(null);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -297,11 +356,23 @@ const Admin = () => {
                           <TableCell>{booking.totalPrice} د.ل</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm">عرض</Button>
+                              <Button size="sm" onClick={() => handleViewBooking(booking)}>عرض</Button>
                               {booking.status === "pending" && (
                                 <>
-                                  <Button size="sm" className="bg-green-500 hover:bg-green-600">تأكيد</Button>
-                                  <Button size="sm" variant="destructive">رفض</Button>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-500 hover:bg-green-600"
+                                    onClick={() => handleConfirmBooking(booking.id)}
+                                  >
+                                    تأكيد
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => handleRejectBooking(booking.id)}
+                                  >
+                                    رفض
+                                  </Button>
                                 </>
                               )}
                             </div>
@@ -312,6 +383,82 @@ const Admin = () => {
                   </Table>
                 </div>
               </div>
+              
+              {/* Booking Details Dialog */}
+              <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>تفاصيل الحجز</DialogTitle>
+                  </DialogHeader>
+                  {selectedBooking && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>رقم الحجز</Label>
+                          <div>{selectedBooking.id}</div>
+                        </div>
+                        <div>
+                          <Label>اسم الفيلا</Label>
+                          <div>{selectedBooking.chaletName}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>اسم العميل</Label>
+                        <div>{selectedBooking.customerName}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>رقم الهاتف</Label>
+                          <div>{selectedBooking.phone}</div>
+                        </div>
+                        <div>
+                          <Label>البريد الإلكتروني</Label>
+                          <div>{selectedBooking.email}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>تاريخ الوصول</Label>
+                          <div>{selectedBooking.startDate}</div>
+                        </div>
+                        <div>
+                          <Label>تاريخ المغادرة</Label>
+                          <div>{selectedBooking.endDate}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>عدد الضيوف</Label>
+                          <div>{selectedBooking.guestsCount}</div>
+                        </div>
+                        <div>
+                          <Label>طريقة الدفع</Label>
+                          <div>
+                            {selectedBooking.paymentMethod === "cash" ? "نقدي" : 
+                             selectedBooking.paymentMethod === "card" ? "بطاقة مصرفية" : "تحويل فوري"}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>المجموع</Label>
+                        <div className="text-lg font-bold">{selectedBooking.totalPrice} د.ل</div>
+                      </div>
+                      <div>
+                        <Label>الحالة</Label>
+                        <Badge className={getStatusBadgeColor(selectedBooking.status)} className="mt-1">
+                          {selectedBooking.status === "confirmed" ? "مؤكد" : 
+                           selectedBooking.status === "pending" ? "قيد الانتظار" : "ملغي"}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button onClick={() => setShowBookingDetails(false)}>
+                      إغلاق
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
             
             <TabsContent value="customers">
@@ -395,7 +542,7 @@ const Admin = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {chalets.map(chalet => (
+                      {chaletsList.map(chalet => (
                         <TableRow key={chalet.id}>
                           <TableCell>{chalet.id.replace("chalet-", "")}</TableCell>
                           <TableCell>{chalet.name}</TableCell>
@@ -405,7 +552,7 @@ const Admin = () => {
                           <TableCell>{chalet.maxGuests}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm">تعديل</Button>
+                              <Button size="sm" onClick={() => handleEditChalet(chalet)}>تعديل</Button>
                               <Button size="sm">إدارة الصور</Button>
                             </div>
                           </TableCell>
@@ -415,6 +562,95 @@ const Admin = () => {
                   </Table>
                 </div>
               </div>
+              
+              {/* Chalet Edit Dialog */}
+              <Dialog open={!!editingChalet} onOpenChange={(open) => {
+                if (!open) setEditingChalet(null);
+              }}>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>تعديل بيانات الفيلا</DialogTitle>
+                  </DialogHeader>
+                  {editingChalet && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>اسم الفيلا</Label>
+                        <Input 
+                          value={editingChalet.name} 
+                          onChange={(e) => setEditingChalet({...editingChalet, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>سعر الليلة العادية</Label>
+                          <Input 
+                            type="number" 
+                            value={editingChalet.price.weekday} 
+                            onChange={(e) => setEditingChalet({
+                              ...editingChalet, 
+                              price: {...editingChalet.price, weekday: Number(e.target.value)}
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <Label>سعر ليلة الخميس والجمعة</Label>
+                          <Input 
+                            type="number" 
+                            value={editingChalet.price.weekend} 
+                            onChange={(e) => setEditingChalet({
+                              ...editingChalet, 
+                              price: {...editingChalet.price, weekend: Number(e.target.value)}
+                            })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>الوصف المختصر</Label>
+                        <Input 
+                          value={editingChalet.description} 
+                          onChange={(e) => setEditingChalet({...editingChalet, description: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label>الوصف المفصل</Label>
+                        <Input 
+                          value={editingChalet.longDescription} 
+                          onChange={(e) => setEditingChalet({...editingChalet, longDescription: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>التقييم</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            min="0" 
+                            max="5"
+                            value={editingChalet.rating} 
+                            onChange={(e) => setEditingChalet({...editingChalet, rating: Number(e.target.value)})}
+                          />
+                        </div>
+                        <div>
+                          <Label>الحد الأقصى للضيوف</Label>
+                          <Input 
+                            type="number" 
+                            value={editingChalet.maxGuests} 
+                            onChange={(e) => setEditingChalet({...editingChalet, maxGuests: Number(e.target.value)})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setEditingChalet(null)}>
+                      إلغاء
+                    </Button>
+                    <Button onClick={handleSaveChalet}>
+                      حفظ التغييرات
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
           </Tabs>
         </div>

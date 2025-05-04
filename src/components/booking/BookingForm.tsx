@@ -64,8 +64,8 @@ const BookingForm = ({
   chaletId = "", 
   chaletName = "فيلا", 
   price = {
-    weekday: 950,
-    weekend: 1000
+    weekday: 1200,
+    weekend: 1600
   } 
 }: BookingFormProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>();
