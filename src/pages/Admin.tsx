@@ -10,8 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { chalets, reviews } from "@/data/chalets";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { X } from "lucide-react";
 
 // Mock data for bookings
 const initialBookings = [
@@ -27,7 +30,8 @@ const initialBookings = [
     status: "pending",
     guestsCount: 4,
     totalPrice: 2000,
-    paymentMethod: "cash" 
+    paymentMethod: "cash",
+    rejectionReason: "" 
   },
   { 
     id: "2", 
@@ -41,7 +45,8 @@ const initialBookings = [
     status: "pending",
     guestsCount: 6,
     totalPrice: 2850,
-    paymentMethod: "transfer" 
+    paymentMethod: "transfer",
+    rejectionReason: "" 
   },
   { 
     id: "3", 
@@ -55,7 +60,8 @@ const initialBookings = [
     status: "cancelled",
     guestsCount: 2,
     totalPrice: 2000,
-    paymentMethod: "card" 
+    paymentMethod: "card",
+    rejectionReason: "غرفة غير متاحة في هذا التاريخ" 
   }
 ];
 
@@ -109,6 +115,12 @@ const Admin = () => {
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   
+  // New state for rejection dialog
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [rejectionBookingId, setRejectionBookingId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [notifyCustomer, setNotifyCustomer] = useState(true);
+  
   // Filter bookings based on status
   const filteredBookings = bookings.filter(booking => {
     if (bookingStatusFilter === "all") return true;
@@ -143,17 +155,40 @@ const Admin = () => {
     });
   };
   
-  // Handle booking rejection/cancellation
-  const handleRejectBooking = (bookingId) => {
+  // Open rejection dialog
+  const handleOpenRejectionDialog = (bookingId) => {
+    setRejectionBookingId(bookingId);
+    setRejectionReason("");
+    setNotifyCustomer(true);
+    setShowRejectionDialog(true);
+  };
+  
+  // Handle booking rejection/cancellation with reason
+  const handleRejectBooking = () => {
+    if (!rejectionBookingId) return;
+    
     setBookings(bookings.map(booking => 
-      booking.id === bookingId ? {...booking, status: "cancelled"} : booking
+      booking.id === rejectionBookingId ? 
+        {...booking, status: "cancelled", rejectionReason: rejectionReason} : 
+        booking
     ));
+    
+    const notificationMessage = notifyCustomer 
+      ? `تم إلغاء الحجز رقم ${rejectionBookingId} وإرسال سبب الإلغاء للعميل`
+      : `تم إلغاء الحجز رقم ${rejectionBookingId} بدون إرسال سبب الإلغاء للعميل`;
     
     toast({
       title: "تم إلغاء الحجز",
-      description: `تم إلغاء الحجز رقم ${bookingId}`,
+      description: notificationMessage,
       variant: "destructive",
     });
+    
+    // Here you would typically send an email to the customer if notifyCustomer is true
+    console.log(`Email notification to customer: ${notifyCustomer ? 'Yes, with reason' : 'Yes, without reason'}`);
+    
+    // Close the dialog
+    setShowRejectionDialog(false);
+    setRejectionBookingId(null);
   };
   
   // Handle viewing booking details
@@ -369,7 +404,7 @@ const Admin = () => {
                                   <Button 
                                     size="sm" 
                                     variant="destructive"
-                                    onClick={() => handleRejectBooking(booking.id)}
+                                    onClick={() => handleOpenRejectionDialog(booking.id)}
                                   >
                                     رفض
                                   </Button>
@@ -445,16 +480,75 @@ const Admin = () => {
                       </div>
                       <div>
                         <Label>الحالة</Label>
-                        <Badge className={getStatusBadgeColor(selectedBooking.status)} className="mt-1">
+                        <Badge className={getStatusBadgeColor(selectedBooking.status)}>
                           {selectedBooking.status === "confirmed" ? "مؤكد" : 
                            selectedBooking.status === "pending" ? "قيد الانتظار" : "ملغي"}
                         </Badge>
                       </div>
+                      
+                      {selectedBooking.status === "cancelled" && selectedBooking.rejectionReason && (
+                        <div>
+                          <Label>سبب الإلغاء</Label>
+                          <div className="p-2 bg-gray-50 rounded mt-1">{selectedBooking.rejectionReason}</div>
+                        </div>
+                      )}
                     </div>
                   )}
                   <DialogFooter>
                     <Button onClick={() => setShowBookingDetails(false)}>
                       إغلاق
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Rejection Reason Dialog */}
+              <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>إلغاء الحجز</DialogTitle>
+                    <DialogDescription>
+                      يرجى إدخال سبب إلغاء الحجز
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="rejection-reason">سبب الإلغاء</Label>
+                      <Textarea 
+                        id="rejection-reason"
+                        placeholder="أدخل سبب إلغاء الحجز هنا..."
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox 
+                        id="notify-customer" 
+                        checked={notifyCustomer}
+                        onCheckedChange={setNotifyCustomer}
+                      />
+                      <Label htmlFor="notify-customer">
+                        إرسال سبب الإلغاء للعميل عبر البريد الإلكتروني
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter className="flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowRejectionDialog(false)}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={handleRejectBooking}
+                      disabled={!rejectionReason.trim()}
+                    >
+                      <X className="w-4 h-4 mr-2" /> تأكيد الإلغاء
                     </Button>
                   </DialogFooter>
                 </DialogContent>
