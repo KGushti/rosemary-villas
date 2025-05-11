@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from "@/components/layouts/Navbar";
 import Footer from "@/components/layouts/Footer";
@@ -366,7 +365,7 @@ const Admin = () => {
                         <TableHead>اسم الفيلا</TableHead>
                         <TableHead>اسم العميل</TableHead>
                         <TableHead>تاريخ الوصول</TableHead>
-                        <TableHead>تاريخ المغادرة</TableHead>
+                        <TableHead>تا��يخ المغادرة</TableHead>
                         <TableHead>الحالة</TableHead>
                         <TableHead>عدد الضيوف</TableHead>
                         <TableHead>المجموع</TableHead>
@@ -528,7 +527,7 @@ const Admin = () => {
                       <Checkbox 
                         id="notify-customer" 
                         checked={notifyCustomer}
-                        onCheckedChange={setNotifyCustomer}
+                        onCheckedChange={(checked) => setNotifyCustomer(checked === true)}
                       />
                       <Label htmlFor="notify-customer">
                         إرسال سبب الإلغاء للعميل عبر البريد الإلكتروني
